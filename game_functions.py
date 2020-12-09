@@ -38,6 +38,7 @@ import pygame_menu
 import copy
 import board
 import player
+import monte_carlo_computer as mc
 player_1 = None
 player_2 = None
 
@@ -97,21 +98,22 @@ def menu():
 
         # Sets screen to correct dimensions
         surface = pygame.display.set_mode((WIDTH, HEIGHT))
-
+        font = pygame_menu.font.FONT_8BIT
         # Menu setup
         menu_screen = pygame_menu.Menu(
             HEIGHT, WIDTH, 'NINE-MEN\'S-MORRIS', theme=pygame_menu.themes.THEME_DARK)
-
         # These are for all the buttons on the menu and corresponding functions
         # TO POSSIBLY IMPLEMENT SCORE KEEPING FROM DATABASE?
         menu_screen.add_text_input('Name: ', default='John Doe')
         menu_screen.add_button('Play Computer', computer_game)
         menu_screen.add_button('2-Player Game', two_player_game)
+        menu_screen.add_button('How to Play', instructions)
         menu_screen.add_button('Quit', pygame_menu.events.EXIT)
-
         # Loops until choice is made
         menu_screen.mainloop(surface)
 
+def instructions():
+    print()
 
 def drop_location(location: tuple) -> tuple:
     """
@@ -575,9 +577,10 @@ def update_grid(board: board.Board, location: tuple):
     # If a mill just occurred and a piece is about to be removed
     else:
         removable = True
+        print(location[0], location[1])
 
         # If location in not usable then pass through function
-        if (location[0] < 0) or (location[1] < 0):
+        if ((location[0] == None) or (location[0] < 0) or (location[1] < 0)):
             pass
 
         # If location has a player 2 tile and this is player 1
@@ -784,6 +787,9 @@ def two_player_game():
     global screen
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
+    global stage
+    stage = ''
+
     # Sets current piece selection to false
     global selected
     selected = False
@@ -912,6 +918,8 @@ def two_player_game():
 
             display_stats(player_turn, stage)
 
+
+
         # if mill_check, display text, needs remove piece function
         if mill_check > 0:
             GAME_FONT.render_to(screen, (25, 150), " Mill found!", white)
@@ -924,5 +932,328 @@ def two_player_game():
 
 
 def computer_game():
+    game_board = board.Board()
 
+    # Shows board in console for developer use
+    game_board.display()
+
+    # Create both players
+    global player_1
+    global player_2
+    # Set it to player 1
+    player_1 = player.Player(True, True)
+    player_2 = player.Player(False, True)
+
+    # Set / Reset the default of mill_check to false
+    global mill_check
+    mill_check = 0
+
+    # Sets standard for screen dimensions
+    global screen
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+    # Sets current piece selection to false
+    global selected
+    selected = False
+
+    #set player tokens
+    player_1.start_tokens = 9
+    player_2.start_tokens = 9
+
+    # Run until the user asks to quit
+    running = True
+    while running:
+        # Did the user click the window close button?
+        if player_1.turn:
+            for event in pygame.event.get():  # User did something
+                if event.type == pygame.QUIT:  # If user clicked close
+                    running = False  # Flag that we are done so we exit this loop
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # User clicks the mouse. Get the position
+                    pos = pygame.mouse.get_pos()
+                    # Updates game grid in console
+                    update_grid(game_board, drop_location(pos))
+                    # Checks if that move made a mill
+                    if mill_check > 0:
+                        # mill_check = True
+                        print("Mill was found")  # Prints in terminal
+                        #get mouse position
+                        pos = pygame.mouse.get_pos()
+                        #update grid human
+                        update_grid(game_board, drop_location(pos))
+                    #output mouse position to console
+                    print("Click ", pos)
+
+        else:
+            #if game is over allow for user to click to go back to menu
+            if stage != "Game Over" and stage != "Game Over: no moves":
+                #perform the monte carlo tree search to get next move
+                ai = mc.monte_carlo(game_board, 2, 1, player_1, player_2, 2, 100)
+                #update the grid for computer player
+                update_grid_AI(game_board, ai)
+
+                # maybe needs fix
+                if mill_check > 0:  # Checks if that move made a mill
+                    # mill_check = True
+                    print("Mill was found")  # Prints in terminal
+                    update_grid_AI(game_board, ai)
+                print("Click ", pos)
+
+            else:
+                #if stage is game over
+                while running:
+                    # Did the user click the window close button?
+                    for event in pygame.event.get():  # User did something
+                        if event.type == pygame.QUIT:  # If user clicked close
+                            running = False  # Flag that we are done so we exit this loop
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            # User clicks the mouse. Get the position
+                            pos = pygame.mouse.get_pos()
+                            #if user clicks menu button, return to menu
+                            if (pos[0] > 35) and (pos[0] < 115) and (pos[1] > 450) and (pos[1] < 500):
+                                menu()
+
+
+
+        # This outputs the game grid from the console to screen with correct coordinates
+
+        # Resets screen so things can be changed in between frames
+        screen.fill(black)
+
+        # draw various board components
+        # outer rectangle
+        pygame.draw.rect(screen, (150, 150, 150), (285, 85, 605, 605), 3)
+
+        # middle rectangle
+        pygame.draw.rect(screen, (150, 150, 150), (385, 185, 405, 405), 3)
+
+        # inner rectangle
+        pygame.draw.rect(screen, (150, 150, 150), (485, 285, 205, 205), 3)
+
+        # lines
+        pygame.draw.line(screen, (150, 150, 150), (585, 85), (585, 285), 3)
+        pygame.draw.line(screen, (150, 150, 150), (585, 485), (585, 685), 3)
+        pygame.draw.line(screen, (150, 150, 150), (250, 385), (485, 385), 3)
+        pygame.draw.line(screen, (150, 150, 150), (685, 385), (885, 385), 3)
+
+        # Draw the board
+        for x in range(7):
+            for y in range(7):
+                rect = pygame.Rect(x * (BLOCK_SIZE + MARGIN) + LEFT_D, y * (BLOCK_SIZE + MARGIN) + TOP_D, BLOCK_SIZE,
+                                   BLOCK_SIZE)
+
+                # If usable spot place white square
+                if game_board.grid[y][x] == 0:
+                    pygame.draw.rect(screen, white, rect)
+
+                # If player 1 spot place green square
+                if game_board.grid[y][x] == 1:
+                    pygame.draw.rect(screen, green, rect)
+
+                # If player 1 selected spot place dark green square
+                if game_board.grid[y][x] == 10:
+                    pygame.draw.rect(screen, dark_green, rect)
+
+                # If player 2 spot place blue square
+                if game_board.grid[y][x] == 2:
+                    pygame.draw.rect(screen, blue, rect)
+
+                # If player 2 selected spot place dark blue square
+                if game_board.grid[y][x] == 20:
+                    pygame.draw.rect(screen, dark_blue, rect)
+
+                # empty cells that a player can move to in phase two are assigned 3
+                if game_board.grid[y][x] == 3:
+                    pygame.draw.rect(screen, orange, rect)
+
+        # If player 1 turn then output player 1
+        if player_1.turn:
+            player_turn = "Player 1's Turn"
+            # If there are still tokens to place
+            if player_1.start_tokens != 0:
+                # Then stage 1 then display stats
+                stage = "Stage 1: Placing"
+            # If start tokens are empty but total tokens above three
+            elif player_1.start_tokens == 0 and player_1.get_total_tokens() > 3:
+                # Then stage 2 and display stats
+                stage = "Stage 2: Moving"
+
+                # This checks if there is a usable move for win condition
+                movable = playable(game_board, player_1, player_2)
+                if not movable:
+                    stage = "Game Over: no moves"
+
+            elif player_1.start_tokens == 0 and player_1.get_total_tokens() == 3:
+                # Stage 3 and display stats
+                stage = "Stage 3: Flying"
+            else:
+                # Win condition for less than 3 tokens available
+                stage = "Game Over"
+
+            display_stats(player_turn, stage)
+
+        # If player 2 turn then output player 2
+        else:
+            player_turn = "Player 2's Turn"
+            # If there are still tokens to place
+            if player_2.start_tokens != 0:
+                # Then stage 1 then display stats
+                stage = "Stage 1: Placing"
+            # If start tokens are empty but total tokens above three
+            elif player_2.start_tokens == 0 and player_2.get_total_tokens() > 3:
+                # Then stage 2 and display stats
+                stage = "Stage 2: Moving"
+
+                # This checks if there is a usable move for win condition
+                movable = playable(game_board, player_1, player_2)
+                if not movable:
+                    stage = "Game Over: no moves"
+
+            elif player_2.start_tokens == 0 and player_2.get_total_tokens() == 3:
+                # Stage 3 and display stats
+                stage = "Stage 3: Flying"
+            else:
+                # Win condition for less than 3 tokens available
+                stage = "Game Over"
+
+            display_stats(player_turn, stage)
+
+        # if mill_check, display text, needs remove piece function
+        if mill_check > 0:
+            GAME_FONT.render_to(screen, (25, 150), " Mill found!", white)
+
+        # This is to output the menu button
+        pygame.draw.rect(screen, white, (40, 450, 80, 40))
+        GAME_FONT.render_to(screen, (50, 460), "Menu", (100, 100, 100))
+
+        pygame.display.flip()
     pass
+
+def update_grid_AI(board: board.Board, carlo: list):
+    """
+    This changes the game grid with a 1 for player 1 and a 2 for AI
+    """
+    # Declare global variables
+    global arr
+    global player_1
+    global player_2
+    global mill_check
+    global last_x
+    global last_y
+    global selected
+
+
+    # If there is currently not a mill
+    if mill_check == 0:
+
+        ####STAGE 1####
+        # If the player has a token
+        if player_2.turn and player_2.start_tokens != 0:
+            #set grid location to selection from monte carlo search
+            location = (carlo[1])
+            #set move to computer piece from empty
+            board.grid[location[0]][location[1]] = 2
+            #update start and board tokens
+            player_2.start_tokens -= 1
+            player_2.board_tokens += 1
+            # Check if this created a mill and how many
+            if check_adjacent(location[0], location[1], board, 2) > 0:
+                # Set mill check
+                mill_check = check_adjacent(location[0], location[1], board, 2)
+                # Add mill/s to player
+                player_2.mills += mill_check
+            # Swap players if a mill was not created
+            else:
+                swap_player(player_1, player_2)
+
+        ####STAGE 2####
+        # Player 2 checking for adjacency after tokens are placed
+        if player_2.turn and player_2.start_tokens == 0 and player_2.board_tokens > 3:
+            #save piece being moved
+            first = carlo[0]
+            #save piece location
+            second = carlo[1]
+            #set old location to empty
+            board.grid[first[0]][first[1]] = 0
+            #change new location to player 2 piece
+            board.grid[second[0]][second[1]] = 2
+            #check adjacency for mills
+            if check_adjacent(second[0], second[1], board, 2) > 0:
+                # Set mill check
+                mill_check = check_adjacent(second[0], second[1], board, 2)
+                # Add mill/s to player
+                player_2.mills += mill_check
+            # Swap players if a mill was not created
+            else:
+                swap_player(player_1, player_2)
+
+
+        ####STAGE 3####
+        # Flying phase player 2!
+        if player_2.turn and player_2.start_tokens == 0 and player_2.board_tokens == 3:
+            #save new location from AI
+            location = (carlo[1])
+            #set new location to AI piece
+            board.grid[location[0]][location[1]] = 2
+            #save old location from AI
+            old = (carlo[0])
+            #set old location to empty piece
+            board.grid[old[0]][old[1]] = 0
+            #check adjacency of new piece to see if mill has been formed
+            if check_adjacent(location[0], location[1], board, 2) > 0:
+                # Set mill check
+                mill_check = check_adjacent(location[0], location[1], board, 2)
+                # Add mill/s to player
+                player_2.mills += mill_check
+            # Swap players if a mill was not created
+            else:
+                swap_player(player_1, player_2)
+
+
+    # If a mill just occurred and a piece is about to be removed - needs edit
+    else:
+        #set piece needing removed to true
+        removable = True
+        print(carlo)
+        #set location to removable AI result
+        location = (carlo[2])
+
+        # If location has a player 1 tile and this is player 2
+        if board.grid[location[0]][location[1]] == 1:
+            # Set found mills
+            mill_check = check_adjacent(location[0], location[1], board, 1)
+            # If the piece being removed has mill/s
+            if mill_check > 0:
+                # If the number of mills don't match placed tokens
+                if player_1.mills / player_1.board_tokens < .30:
+                    removable = False
+                # If there is a stacked mill check to see if there is a loose token
+                else:
+                    for i in range(0, 7):
+                        for j in range(0, 7):
+                            if board.grid[i][j] == 1:
+                                if check_adjacent(i, j, board, 1) == 0:
+                                    removable = False
+            # If it passes the test
+            if removable:
+                # Check how many mills will be removed and take them from player
+                if mill_check > 0:
+                    player_1.mills -= mill_check
+                # Set tile to empty
+                board.grid[location[0]][location[1]] = 0
+                # Remove token from Player 1
+                player_1.board_tokens -= 1
+                # Swap players
+                swap_player(player_1, player_2)
+                # Set mill check to false now that it has occurred
+                mill_check = 0
+
+    # Output board in console to see update made
+    board.display()
+    # Print click (x,y)
+    #print(location[1], location[0])
+    # Print all tracked tokens and mills for each player
+    print(player_1.start_tokens, player_1.get_total_tokens(),
+          player_1.board_tokens, player_1.mills)
+    print(player_2.start_tokens, player_2.get_total_tokens(),
+          player_2.board_tokens, player_2.mills)
