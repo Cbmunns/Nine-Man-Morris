@@ -994,7 +994,7 @@ def computer_game():
             #if game is over allow for user to click to go back to menu
             if stage != "Game Over" and stage != "Game Over: no moves":
                 #perform the monte carlo tree search to get next move
-                ai = mc.monte_carlo(game_board, 2, 1, player_2, player_1, 2, 50)
+                ai = mc.monte_carlo(game_board, 2, 1, player_2, player_1, 2, 35)
                 print(ai, "frick")
                 #update the grid for computer player
                 update_grid_AI(game_board, ai)

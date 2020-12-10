@@ -980,12 +980,12 @@ def monte_carlo(copy, player, opponent, ai_class, human_class, exploration, iter
         # If move creates a mill, prioritize
         if root.children[i].removal != None:
 
-            root.children[i].score += 2
+            root.children[i].score += 5
         # If that move blocks an enemy mill, prioritize
         temp_copy = deepcopy(copy)
         temp_copy[root.children[i].move[0]][root.children[i].move[1]] = 1
         if check_adjacent(root.children[i].move[0],root.children[i].move[1], temp_copy, 1) > 0:
-            root.children[i].score += 1
+            root.children[i].score += 3
         # Set score marke
         x = root.children[i].score
 
