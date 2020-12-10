@@ -486,6 +486,7 @@ def random_move(board, mine, yours, starting):
     # piece,move, removal
     result = [None, None, None]
 
+    grid = deepcopy(board)
     # Find all your pieces
     def find_piece(grid):
         pieces = []
@@ -537,8 +538,10 @@ def random_move(board, mine, yours, starting):
                 onboard.append(temp_place)
     # If stage 1
     if starting > 0:
+        
         # Create a copy of the board and find a valid move
         temp_grid = deepcopy(grid)
+        
         move = None
         while move == None:
             move = find_move(temp_grid)
@@ -582,19 +585,19 @@ def random_move(board, mine, yours, starting):
             return result
     # if stage 2
     elif starting == 0 and len(onboard) > 3:
-
+        
         piece = None
         movement = []
 
         temp_grid = deepcopy(grid)
-
-        # Rotate through pieces until you find one with a valid move
+                    
+            # Rotate through pieces until you find one with a valid move
         while piece == None:
             # Create a copy of the board to work on
             temp_grid = deepcopy(grid)
             # Find piece
             temp_piece = find_piece(temp_grid)
-            # Look for moves
+                # Look for moves
             find_moves(temp_grid, (temp_piece[0], temp_piece[1]))
             movement = []
             # If a valid place appears set piece and break
@@ -660,6 +663,7 @@ def random_move(board, mine, yours, starting):
             return result
     # If in stage 3
     else:
+        
         piece = None
         movement = []
         temp_grid = deepcopy(grid)
@@ -826,12 +830,14 @@ def rollout(node, player, opponent):
     tokens = [0, 0]
     blocked_1 = True
     blocked_2 = True
+    count = 0
 
     # While game is still going
     while not game_over:
         blocked_1 = True
         blocked_2 = True
-
+        count += 1
+        
         tokens[0] = 0
         tokens[1] = 0
         # Check for win condition
@@ -885,7 +891,7 @@ def rollout(node, player, opponent):
                 board[moves[1][0]][moves[1][1]] = 1
             if moves[2] != None:
                 board[moves[2][0]][moves[2][1]] = 0
-
+            
             # Progress turn
             turn += 1
             turn = turn % 2
@@ -974,6 +980,11 @@ def monte_carlo(copy, player, opponent, ai_class, human_class, exploration, iter
         # If move creates a mill, prioritize
         if root.children[i].removal != None:
 
+            root.children[i].score = 11000
+        # If that move blocks an enemy mill, prioritize
+        temp_copy = deepcopy(copy)
+        temp_copy[root.children[i].move[0]][root.children[i].move[1]] = 1
+        if check_adjacent(root.children[i].move[0],root.children[i].move[1], temp_copy, 1) > 0:
             root.children[i].score = 10000
         # Set score marker
         x = root.children[i].score
@@ -995,7 +1006,7 @@ def monte_carlo(copy, player, opponent, ai_class, human_class, exploration, iter
     if container != []:
         random.shuffle(container)
         final_move = container[0]
-
+    print(final_move)
     # Return [[piece], [move], [removal]]
     return final_move
 

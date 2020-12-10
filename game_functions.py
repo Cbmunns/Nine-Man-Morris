@@ -942,7 +942,7 @@ def computer_game():
     global player_2
     # Set it to player 1
     player_1 = player.Player(True, True)
-    player_2 = player.Player(False, True)
+    player_2 = player.Player(False, False)
 
     # Set / Reset the default of mill_check to false
     global mill_check
@@ -988,7 +988,8 @@ def computer_game():
             #if game is over allow for user to click to go back to menu
             if stage != "Game Over" and stage != "Game Over: no moves":
                 #perform the monte carlo tree search to get next move
-                ai = mc.monte_carlo(game_board, 2, 1, player_1, player_2, 2, 100)
+                ai = mc.monte_carlo(game_board, 2, 1, player_2, player_1, 2, 25)
+                print(ai, "frick")
                 #update the grid for computer player
                 update_grid_AI(game_board, ai)
 
@@ -1094,7 +1095,7 @@ def computer_game():
 
         # If player 2 turn then output player 2
         else:
-            player_turn = "Player 2's Turn"
+            player_turn = "Computer's Turn"
             # If there are still tokens to place
             if player_2.start_tokens != 0:
                 # Then stage 1 then display stats
@@ -1148,7 +1149,7 @@ def update_grid_AI(board: board.Board, carlo: list):
 
         ####STAGE 1####
         # If the player has a token
-        if player_2.turn and player_2.start_tokens != 0:
+        if player_2.turn and player_2.start_tokens > 0:
             #set grid location to selection from monte carlo search
             location = (carlo[1])
             #set move to computer piece from empty
@@ -1156,6 +1157,7 @@ def update_grid_AI(board: board.Board, carlo: list):
             #update start and board tokens
             player_2.start_tokens -= 1
             player_2.board_tokens += 1
+            print(player_2.start_tokens)
             # Check if this created a mill and how many
             if check_adjacent(location[0], location[1], board, 2) > 0:
                 # Set mill check
@@ -1168,7 +1170,8 @@ def update_grid_AI(board: board.Board, carlo: list):
 
         ####STAGE 2####
         # Player 2 checking for adjacency after tokens are placed
-        if player_2.turn and player_2.start_tokens == 0 and player_2.board_tokens > 3:
+        if player_2.turn and player_2.start_tokens < 1 and player_2.board_tokens > 3:
+            print(player_2.start_tokens < 1)
             #save piece being moved
             first = carlo[0]
             #save piece location
@@ -1202,6 +1205,7 @@ def update_grid_AI(board: board.Board, carlo: list):
             #check adjacency of new piece to see if mill has been formed
             if check_adjacent(location[0], location[1], board, 2) > 0:
                 # Set mill check
+                print("ding")
                 mill_check = check_adjacent(location[0], location[1], board, 2)
                 # Add mill/s to player
                 player_2.mills += mill_check
@@ -1217,23 +1221,22 @@ def update_grid_AI(board: board.Board, carlo: list):
         print(carlo)
         #set location to removable AI result
         location = (carlo[2])
-
+        print("ping")
         # If location has a player 1 tile and this is player 2
         if board.grid[location[0]][location[1]] == 1:
             # Set found mills
             mill_check = check_adjacent(location[0], location[1], board, 1)
             # If the piece being removed has mill/s
             if mill_check > 0:
-                # If the number of mills don't match placed tokens
-                if player_1.mills / player_1.board_tokens < .30:
-                    removable = False
+                
+                
                 # If there is a stacked mill check to see if there is a loose token
-                else:
-                    for i in range(0, 7):
-                        for j in range(0, 7):
-                            if board.grid[i][j] == 1:
-                                if check_adjacent(i, j, board, 1) == 0:
-                                    removable = False
+                
+                for i in range(0, 7):
+                    for j in range(0, 7):
+                        if board.grid[i][j] == 1:
+                            if check_adjacent(i, j, board, 1) == 0:
+                                removable = False
             # If it passes the test
             if removable:
                 # Check how many mills will be removed and take them from player
