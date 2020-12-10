@@ -104,10 +104,10 @@ def menu():
             HEIGHT, WIDTH, 'NINE-MEN\'S-MORRIS', theme=pygame_menu.themes.THEME_DARK)
         # These are for all the buttons on the menu and corresponding functions
         # TO POSSIBLY IMPLEMENT SCORE KEEPING FROM DATABASE?
-        menu_screen.add_text_input('Name: ', default='John Doe')
+        #menu_screen.add_text_input('Name: ', default='John Doe')
         menu_screen.add_button('Play Computer', computer_game)
         menu_screen.add_button('2-Player Game', two_player_game)
-        menu_screen.add_button('How to Play', instructions)
+        #menu_screen.add_button('How to Play', instructions)
         menu_screen.add_button('Quit', pygame_menu.events.EXIT)
         # Loops until choice is made
         menu_screen.mainloop(surface)
@@ -748,10 +748,16 @@ def display_stats(turn: str, stage: str):
         else:
             printout = "No playable moves!"
         if player.number:
-            STAT_FONT.render_to(
-                screen, (40, 350), printout, (100, 100, 100))
-            STAT_FONT.render_to(
-                screen, (40, 400), "Player 2 Wins ", (100, 100, 100))
+            if player == player_2 and player_2.playable == False:
+                STAT_FONT.render_to(
+                    screen, (40, 350), printout, (100, 100, 100))
+                STAT_FONT.render_to(
+                    screen, (40, 400), "Computer Wins ", (100, 100, 100))
+            else:
+                STAT_FONT.render_to(
+                    screen, (40, 350), printout, (100, 100, 100))
+                STAT_FONT.render_to(
+                    screen, (40, 400), "Player 2 Wins ", (100, 100, 100))
         else:
             STAT_FONT.render_to(
                 screen, (40, 350), printout, (100, 100, 100))
@@ -1095,7 +1101,7 @@ def computer_game():
 
         # If player 2 turn then output player 2
         else:
-            player_turn = "Computer's Turn"
+            player_turn = "Computer Turn"
             # If there are still tokens to place
             if player_2.start_tokens != 0:
                 # Then stage 1 then display stats
