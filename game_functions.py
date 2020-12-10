@@ -994,7 +994,7 @@ def computer_game():
             #if game is over allow for user to click to go back to menu
             if stage != "Game Over" and stage != "Game Over: no moves":
                 #perform the monte carlo tree search to get next move
-                ai = mc.monte_carlo(game_board, 2, 1, player_2, player_1, 2, 25)
+                ai = mc.monte_carlo(game_board, 2, 1, player_2, player_1, 2, 50)
                 print(ai, "frick")
                 #update the grid for computer player
                 update_grid_AI(game_board, ai)
@@ -1163,7 +1163,7 @@ def update_grid_AI(board: board.Board, carlo: list):
             #update start and board tokens
             player_2.start_tokens -= 1
             player_2.board_tokens += 1
-            print(player_2.start_tokens)
+            print(player_2.start_tokens, "check")
             # Check if this created a mill and how many
             if check_adjacent(location[0], location[1], board, 2) > 0:
                 # Set mill check
@@ -1176,7 +1176,7 @@ def update_grid_AI(board: board.Board, carlo: list):
 
         ####STAGE 2####
         # Player 2 checking for adjacency after tokens are placed
-        if player_2.turn and player_2.start_tokens < 1 and player_2.board_tokens > 3:
+        elif player_2.turn and player_2.start_tokens < 1 and player_2.board_tokens > 3:
             print(player_2.start_tokens < 1)
             #save piece being moved
             first = carlo[0]
@@ -1199,7 +1199,7 @@ def update_grid_AI(board: board.Board, carlo: list):
 
         ####STAGE 3####
         # Flying phase player 2!
-        if player_2.turn and player_2.start_tokens == 0 and player_2.board_tokens == 3:
+        else: 
             #save new location from AI
             location = (carlo[1])
             #set new location to AI piece
@@ -1262,7 +1262,8 @@ def update_grid_AI(board: board.Board, carlo: list):
     # Print click (x,y)
     #print(location[1], location[0])
     # Print all tracked tokens and mills for each player
-    print(player_1.start_tokens, player_1.get_total_tokens(),
-          player_1.board_tokens, player_1.mills)
-    print(player_2.start_tokens, player_2.get_total_tokens(),
-          player_2.board_tokens, player_2.mills)
+    
+    #print(player_1.start_tokens, player_1.get_total_tokens(),
+          #player_1.board_tokens, player_1.mills)
+    #print(player_2.start_tokens, player_2.get_total_tokens(),
+         # player_2.board_tokens, player_2.mills)
